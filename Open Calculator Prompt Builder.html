@@ -1,0 +1,367 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Open Calculator Prompt Builder</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&family=Zen+Old+Mincho:wght@600;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 設定（左）→ 生成プロンプト（右・スティッキー）の2カラム。狭い画面では縦積み */
+:root{
+  --bg:#eef0f3; --panel:#ffffff; --ink:#1f2633; --muted:#667085; --line:#d5dae2;
+  --accent:#34417a; --accent-soft:#e3e7f5;
+  --acid:#2f8a57; --acid-bg:#e2f3e8; --neu:#b08600; --neu-bg:#fbf1cf; --alk:#c0392b; --alk-bg:#fbe3df;
+  --warn:#9a5b00; --warn-bg:#fff4dc;
+  --display:'Zen Old Mincho','Hiragino Mincho ProN','Yu Mincho',serif;
+  --body:'BIZ UDGothic','Hiragino Kaku Gothic ProN','Meiryo',sans-serif;
+  --mono:'DM Mono','SFMono-Regular',Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141821; --panel:#1c212d; --ink:#e6e9f0; --muted:#98a2b6; --line:#323a4b;
+  --accent:#9fb0f0; --accent-soft:#283152;
+  --acid:#6fd39a; --acid-bg:#1d3527; --neu:#e9c55a; --neu-bg:#3a3219; --alk:#f08a7c; --alk-bg:#3d221f;
+  --warn:#f0bf6a; --warn-bg:#3a2d16; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141821; --panel:#1c212d; --ink:#e6e9f0; --muted:#98a2b6; --line:#323a4b;
+  --accent:#9fb0f0; --accent-soft:#283152;
+  --acid:#6fd39a; --acid-bg:#1d3527; --neu:#e9c55a; --neu-bg:#3a3219; --alk:#f08a7c; --alk-bg:#3d221f;
+  --warn:#f0bf6a; --warn-bg:#3a2d16; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.7;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:1240px;margin:0 auto}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 24px;margin-bottom:20px}
+.eyebrow{font-size:11px;letter-spacing:.18em;color:var(--muted)}
+h1{font-family:var(--display);font-size:28px;line-height:1.3;margin:2px 0 0;text-wrap:balance}
+.lead{color:var(--muted);max-width:60ch;margin:0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+section.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px}
+.ph{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
+.ph .n{font-family:var(--mono);font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:0 6px}
+.ph h2{font-family:var(--display);font-size:18px;margin:0}
+.hint{font-size:12px;color:var(--muted);margin:0 0 10px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+input[type=text],textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:9px 10px;width:100%}
+input[type=color]{width:100%;height:40px;border:1px solid var(--line);border-radius:6px;background:var(--bg);padding:3px}
+input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.brand{margin-top:14px}
+.brand:first-of-type{margin-top:0}
+.bhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.bhead b{font-size:13px}
+.mini{font:inherit;font-size:11px;color:var(--accent);background:none;border:1px solid var(--line);border-radius:999px;padding:2px 10px;cursor:pointer}
+.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px}
+.item{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:6px;padding:7px 9px;cursor:pointer;background:var(--panel)}
+.item:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.item input{accent-color:var(--accent);margin:0}
+.item .nm{flex:1;min-width:0;font-size:13px;font-weight:700;line-height:1.3}
+.item .nm small{display:block;font-weight:400;color:var(--muted);font-size:11px}
+.item .v{font-family:var(--mono);font-size:12px;font-variant-numeric:tabular-nums}
+.badge{font-family:var(--mono);font-size:10.5px;border-radius:999px;padding:1px 7px;white-space:nowrap}
+.b-acid{color:var(--acid);background:var(--acid-bg)} .b-neu{color:var(--neu);background:var(--neu-bg)} .b-alk{color:var(--alk);background:var(--alk-bg)}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg label{border:1px solid var(--line);border-radius:8px;padding:10px;cursor:pointer;text-align:center}
+.seg label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.seg input{position:absolute;opacity:0}
+.seg b{display:block;font-size:14px} .seg span{font-size:11px;color:var(--muted)}
+.chk{display:flex;gap:8px;align-items:center;font-size:13px;margin-top:10px}
+.chk input{accent-color:var(--accent)}
+.svgbox{overflow-x:auto}
+svg text{fill:var(--muted);font-family:var(--mono);font-size:10px}
+.cov{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px}
+.cov th,.cov td{border:1px solid var(--line);padding:6px 8px;vertical-align:top;text-align:left}
+.cov th{background:var(--bg);font-weight:700;white-space:nowrap}
+.cov td.none{color:var(--alk);background:var(--alk-bg)}
+.pat{display:inline-block;font-family:var(--mono);font-size:10.5px;border:1px solid var(--line);border-radius:4px;padding:0 5px;margin:1px 2px 1px 0}
+.alert{font-size:12px;border-radius:6px;padding:8px 10px;margin-top:10px;color:var(--warn);background:var(--warn-bg)}
+.alert ul{margin:4px 0 0;padding-left:18px}
+.out{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+.outbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:space-between;margin-bottom:10px}
+.stat{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.copy{font:inherit;font-weight:700;color:#fff;background:var(--accent);border:none;border-radius:6px;padding:9px 18px;cursor:pointer}
+:root[data-theme="dark"] .copy{color:#141821}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .copy{color:#141821}}
+#prompt{font-family:var(--mono);font-size:12px;line-height:1.65;min-height:60vh;resize:vertical;white-space:pre-wrap}
+.toast{min-height:18px;font-size:12px;color:var(--acid)}
+.example{font-size:11px;color:var(--warn);background:var(--warn-bg);border-radius:4px;padding:1px 6px;margin-left:6px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">QUANTIFY BEAUTY / OPEN CALCULATOR</div>
+      <h1>サロン専用カリキュレーター プロンプト生成</h1>
+    </div>
+    <p class="lead">在庫と表示方針を選ぶと、そのサロン専用の薬剤レシピ計算アプリを作るためのプロンプトができあがります。</p>
+  </header>
+
+  <div class="grid">
+    <div class="col">
+      <section class="panel">
+        <div class="ph"><span class="n">1</span><h2>サロン情報</h2><span class="example">入力例</span></div>
+        <div class="row">
+          <label class="f">サロン名<input type="text" id="salon" value="サンプルサロン"></label>
+          <label class="f">アプリ名<input type="text" id="appname" value="Recipe Calculator"></label>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <label class="f">テーマカラー<input type="color" id="theme" value="#7a6a8c"></label>
+          <label class="f">ロゴ画像のファイル名（任意）<input type="text" id="logo" placeholder="例：logo.png"></label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="ph"><span class="n">2</span><h2>在庫（商品マスタ）</h2></div>
+        <p class="hint">サロンに置いている薬剤だけを選びます。数値は合計還元値、バッジはpH帯です。</p>
+        <div id="inv"></div>
+      </section>
+
+      <section class="panel">
+        <div class="ph"><span class="n">3</span><h2>在庫のカバー範囲</h2></div>
+        <p class="hint">横軸がpH、縦軸が還元値。帯の色が酸性・中性・アルカリです。点が重なる薬剤は役割がかぶっています。</p>
+        <div class="svgbox"><svg id="plot" viewBox="0 0 520 250" width="100%" role="img" aria-label="在庫薬剤のpHと還元値の分布"></svg></div>
+        <table class="cov" id="cov"></table>
+        <div id="alerts"></div>
+      </section>
+
+      <section class="panel">
+        <div class="ph"><span class="n">4</span><h2>推奨の絞り込み</h2></div>
+        <div class="seg">
+          <label><input type="radio" name="bias" value="omakase"><b>おまかせ</b><span>推奨1案のみ</span></label>
+          <label><input type="radio" name="bias" value="standard" checked><b>標準</b><span>推奨1案＋代替2案</span></label>
+          <label><input type="radio" name="bias" value="full"><b>フル</b><span>条件に合う全候補</span></label>
+        </div>
+        <label class="chk"><input type="checkbox" id="share" checked>診断結果の共有テキスト（LINE等にコピー）を付ける</label>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="panel out">
+        <div class="outbar">
+          <div><div class="ph" style="margin:0"><span class="n">5</span><h2>生成されたプロンプト</h2></div>
+            <div class="stat" id="stat"></div></div>
+          <button class="copy" id="copy" type="button">プロンプトをコピー</button>
+        </div>
+        <textarea id="prompt" readonly aria-label="生成されたプロンプト"></textarea>
+        <div class="toast" id="toast" role="status"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+const BRANDS={quoline:'アリミノ クオライン',hita:'ルベル HITA APストレート',rb:'ReBALANCE'};
+const P=[
+ {id:'q280',b:'quoline',n:'T-280',role:'ベース',c:{TGA:10.7},ph:9.2},
+ {id:'q250',b:'quoline',n:'T-C 250',role:'ベース',c:{TGA:9.0,CYS:1.7},ph:8.9},
+ {id:'q200',b:'quoline',n:'CA-T 200',role:'ベース',c:{TGA:2.0,CA:5.0},ph:8.8},
+ {id:'q130',b:'quoline',n:'CA-C 130',role:'ベース',c:{CYS:2.0,CA:5.0},ph:7.7},
+ {id:'q110',b:'quoline',n:'CA-C 110',role:'ベース',c:{CYS:2.0,CA:5.0},ph:6.0},
+ {id:'q100',b:'quoline',n:'CA-T-C 100',role:'ベース',c:{CYS:1.0,CA:4.0},ph:7.7},
+ {id:'q80',b:'quoline',n:'T-C 80',role:'ベース',c:{TGA:4.0,CYS:1.0},ph:7.0},
+ {id:'q50',b:'quoline',n:'T-C 50',role:'ベース',c:{TGA:1.0,CYS:0.9},ph:6.0},
+ {id:'q0',b:'quoline',n:'アジャストゼロ',role:'希釈',c:{},ph:5.0,note:'DTDG 1.0%（還元剤ではないため還元値0%扱い）'},
+ {id:'hex',b:'hita',n:'EXハード 1',role:'チオ系ベース',c:{TGA:9.0,CYS:0.5},ph:9.2},
+ {id:'hh1',b:'hita',n:'ハード 1',role:'チオ系ベース',c:{TGA:8.0,CYS:1.5},ph:9.1},
+ {id:'hcos',b:'hita',n:'コスメ 1',role:'コスメ系ベース',c:{TGA:1.5,CYS:0.2,'CA-HCl':4.0,TGr:0.5},ph:8.7},
+ {id:'halk',b:'hita',n:'アルカリコスメ 1',role:'コスメ系ベース',c:{TGA:1.5,CYS:0.8,CA:2.5,'TG-CA':0.8,TGr:1.2},ph:9.0},
+ {id:'hneu',b:'hita',n:'中性コスメ 1',role:'コスメ系ベース',c:{CYS:1.0,CA:3.0,'TG-CA':0.8,TGr:2.0},ph:6.8},
+ {id:'hacid',b:'hita',n:'酸性コスメ 1',role:'コスメ系ベース',c:{CYS:1.0,CA:3.0,'TG-CA':0.8,TGr:2.0},ph:3.8},
+ {id:'hrib',b:'hita',n:'リブーターセラムX',role:'希釈',c:{},ph:3.8},
+ {id:'yellow',b:'rb',n:'Yellow（クリーム）',role:'ベース（伸び重視）',c:{TGA:0.4,TGr:0.4},ph:5.0},
+ {id:'pale',b:'rb',n:'Pale Yellow（ジェル）',role:'ベース（ケア重視）',c:{TGr:0.2},ph:4.0},
+ {id:'riko',b:'rb',n:'RIKO Treatment',role:'希釈',c:{},ph:6.0},
+ {id:'booster',b:'rb',n:'Booster',role:'添加剤',c:{CA:29.0},ph:9.6},
+];
+P.forEach(p=>p.t=+Object.values(p.c).reduce((a,v)=>a+v,0).toFixed(2));
+const byId=Object.fromEntries(P.map(p=>[p.id,p]));
+const DILUENT={quoline:'q0',hita:'hrib'};
+const TIERS=[ // ミックス用チオ系代替
+ {tier:'強',ref:'Black (SH) 10.8%',q:'q280',h:'hex'},
+ {tier:'中',ref:'Brown (M) 9.0%',q:'q200',h:'hh1'},
+ {tier:'弱',ref:'Light Brown 7.0%',q:'q80',h:'hcos'},
+];
+const BANDS=['acid','neu','alk'];
+const BAND_JP={acid:'酸性',neu:'中性',alk:'アルカリ'};
+const band=ph=>ph<=6.05?'acid':ph<8?'neu':'alk';
+const fmt=(n,d=1)=>(+n).toFixed(d);
+const compStr=p=>Object.keys(p.c).length?Object.entries(p.c).map(([k,v])=>`${k} ${v}`).join(' / '):'還元剤なし';
+// Booster添加上限（ベース100に対する%）
+const MAXADD={yellow:{acid:5,neu:14.5,alk:25},pale:{acid:7.5,neu:17,alk:25}};
+const mixUpper=v=>(v*100+29*20)/120;
+
+function maxBand(hp,need){
+  if(hp>=10) return 'alk';
+  if(hp>=7) return need==='growth'?'alk':'neu';
+  if(hp>=4) return need==='growth'?'neu':'acid';
+  return 'acid';
+}
+const okBand=(ph,mb)=>BANDS.indexOf(band(ph))<=BANDS.indexOf(mb);
+
+function candidates(hp,need,inv){
+  const mb=maxBand(hp,need), out=[];
+  // ① ReBALANCEメイン
+  const pref=need==='growth'?['yellow','pale']:['pale','yellow'];
+  const base=pref.find(id=>inv.has(id));
+  if(base){
+    const b=byId[base].t;
+    if(hp<=b && inv.has('riko')) out.push({pat:'①',name:`${byId[base].n}＋RIKO`});
+    else if(inv.has('booster')){
+      const a=MAXADD[base][mb];
+      if(hp<=(b*100+29*a)/(100+a)) out.push({pat:'①',name:`${byId[base].n}＋Booster`});
+    }
+  }
+  // ② 他社メイン
+  ['quoline','hita'].forEach(br=>{
+    const prods=P.filter(p=>p.b===br&&inv.has(p.id)&&p.t>0&&okBand(p.ph,mb));
+    const hasDil=inv.has(DILUENT[br]);
+    prods.filter(p=>p.t>=hp).forEach(p=>{
+      const lower=prods.some(q=>q.t<hp);
+      if(hasDil||lower||Math.abs(p.t-hp)<0.05) out.push({pat:'②',name:p.n});
+    });
+  });
+  // ③ ミックス
+  const dil=['yellow','pale','riko'].some(id=>inv.has(id));
+  if(inv.has('booster')&&dil){
+    ['q','h'].forEach(k=>{
+      const t=TIERS.slice().reverse().find(t=>{const p=byId[t[k]];return inv.has(p.id)&&okBand(p.ph,mb)&&mixUpper(p.t)>=hp;});
+      if(t) out.push({pat:'③',name:`${byId[t[k]].n}＋Booster`});
+    });
+  }
+  return {mb,out};
+}
+
+const state={inv:new Set(['yellow','pale','riko','booster','q280','q200','q110','q80','q50','q0'])};
+
+function renderInv(){
+  const el=document.getElementById('inv');
+  el.innerHTML=Object.entries(BRANDS).map(([k,label])=>`
+    <div class="brand"><div class="bhead"><b>${label}</b>
+      <button class="mini" type="button" data-all="${k}">すべて選択／解除</button></div>
+    <div class="items">${P.filter(p=>p.b===k).map(p=>`
+      <label class="item"><input type="checkbox" id="inv-${p.id}" data-id="${p.id}" ${state.inv.has(p.id)?'checked':''}>
+        <span class="nm">${p.n}<small>${p.role}</small></span>
+        <span class="v">${fmt(p.t)}%</span>
+        <span class="badge b-${band(p.ph)}">pH${fmt(p.ph)}</span></label>`).join('')}</div></div>`).join('');
+}
+
+function renderPlot(){
+  const W=520,H=250,L=40,R=12,T=12,B=30, x0=3.5,x1=10,y0=0,y1=12;
+  const X=v=>L+(v-x0)/(x1-x0)*(W-L-R), Y=v=>H-B-(v-y0)/(y1-y0)*(H-T-B);
+  let s='';
+  [[x0,6.05,'acid'],[6.05,8,'neu'],[8,x1,'alk']].forEach(([a,b2,c])=>{
+    s+=`<rect x="${X(a)}" y="${T}" width="${X(b2)-X(a)}" height="${H-T-B}" style="fill:var(--${c}-bg)"/>`;
+    s+=`<text x="${(X(a)+X(b2))/2}" y="${T+12}" text-anchor="middle" style="fill:var(--${c})">${BAND_JP[c]}</text>`;
+  });
+  for(let v=0;v<=12;v+=3) s+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" style="stroke:var(--line)" stroke-width="1"/><text x="${L-6}" y="${Y(v)+3}" text-anchor="end">${v}%</text>`;
+  for(let v=4;v<=10;v++) s+=`<text x="${X(v)}" y="${H-B+14}" text-anchor="middle">${v}</text>`;
+  s+=`<text x="${(L+W-R)/2}" y="${H-4}" text-anchor="middle">pH</text>`;
+  const sel=P.filter(p=>state.inv.has(p.id)&&p.id!=='booster');
+  const seen={};
+  sel.forEach(p=>{
+    const key=fmt(p.ph)+'_'+fmt(p.t); const k=seen[key]=(seen[key]||0)+1;
+    const cx=X(p.ph), cy=Y(p.t)-(k-1)*12;
+    s+=`<circle cx="${cx}" cy="${Y(p.t)}" r="4.5" style="fill:var(--accent)"/>`;
+    s+=`<text x="${cx+7}" y="${cy-5}" style="fill:var(--ink)">${p.n.replace(/（.*）/,'')}</text>`;
+  });
+  if(state.inv.has('booster')) s+=`<text x="${W-R-4}" y="${T+26}" text-anchor="end" style="fill:var(--ink)">Booster 29%・pH9.6（枠外）</text>`;
+  document.getElementById('plot').innerHTML=s;
+}
+
+const REPS=[{l:'4未満',hp:2.5},{l:'4〜7未満',hp:5.5},{l:'7〜10未満',hp:8.5},{l:'10以上',hp:12}];
+function renderCoverage(){
+  let h='<tr><th>毛髪体力（代表値）</th><th>伸び重視</th><th>ケア重視</th></tr>';
+  REPS.forEach(r=>{
+    h+=`<tr><th>${r.l}（HP ${r.hp}）</th>`;
+    ['growth','care'].forEach(nd=>{
+      const {mb,out}=candidates(r.hp,nd,state.inv);
+      h+= out.length?`<td><span class="badge b-${mb}">${BAND_JP[mb]}まで</span><br>${out.map(o=>`<span class="pat">${o.pat}</span>${o.name}`).join('<br>')}</td>`
+        :`<td class="none"><span class="badge b-${mb}">${BAND_JP[mb]}まで</span><br>作れる候補がありません</td>`;
+    });
+    h+='</tr>';
+  });
+  document.getElementById('cov').innerHTML=h+'<tr><td colspan="3" style="color:var(--muted)">①ReBALANCEメイン ②他社メイン ③ミックス</td></tr>';
+  // 重複・不足の注意
+  const notes=[], sel=P.filter(p=>state.inv.has(p.id)&&p.t>0&&p.id!=='booster');
+  const grp={};
+  sel.forEach(p=>{const k=p.b+'|'+p.t+'|'+band(p.ph);(grp[k]=grp[k]||[]).push(p.n);});
+  Object.values(grp).filter(g=>g.length>1).forEach(g=>notes.push(`${g.join('・')} は還元値もpH帯も同じです。どちらか1品に絞れます。`));
+  ['quoline','hita'].forEach(br=>{
+    if(P.some(p=>p.b===br&&state.inv.has(p.id)&&p.t>0)&&!state.inv.has(DILUENT[br]))
+      notes.push(`${BRANDS[br]}の希釈剤（${byId[DILUENT[br]].n}）がないため、②は同ブランドの低い薬剤との2剤混合で作ります。`);
+  });
+  if((state.inv.has('yellow')||state.inv.has('pale'))&&!state.inv.has('booster')) notes.push('Boosterがないため、ReBALANCEメインは還元値1%未満のレシピしか作れません。');
+  document.getElementById('alerts').innerHTML=notes.length?`<div class="alert"><b>在庫の見直しポイント</b><ul>${notes.map(n=>`<li>${n}</li>`).join('')}</ul></div>`:'';
+}
+
+function buildPrompt(){
+  const v=id=>document.getElementById(id).value.trim();
+  const salon=v('salon')||'（サロン名）', app=v('appname')||'Recipe Calculator', color=v('theme'), logo=v('logo');
+  const bias=document.querySelector('input[name=bias]:checked').value;
+  const biasTxt={omakase:'おまかせ：推奨1案のみ表示',standard:'標準：推奨1案＋代替2案を表示',full:'フル：条件に合う全候補を表示'}[bias];
+  const sel=P.filter(p=>state.inv.has(p.id));
+  const has=id=>state.inv.has(id);
+  const rbMain=(has('yellow')||has('pale'));
+  const mixOK=has('booster')&&(has('yellow')||has('pale')||has('riko'))&&TIERS.some(t=>has(t.q)||has(t.h));
+  const others=['quoline','hita'].filter(br=>sel.some(p=>p.b===br&&p.t>0));
+  const L=[];
+  L.push(`# 依頼`,`美容室「${salon}」専用の縮毛矯正薬剤レシピ計算Webアプリ「${app}」を、1ファイルのHTML（CSS・JavaScript同梱、スマホ優先）で作成してください。`,`毛髪診断で根本・毛先それぞれの「毛髪体力（HP）」を算出し、HPを目標還元値（%）として、サロンの在庫だけで作れる薬剤レシピを提案・計算するアプリです。`,'');
+  L.push(`# デザイン`,`- テーマカラー：${color}（見出し・選択状態・ボタンに使用。背景は淡いトーン）`,`- フォント：本文 BIZ UDGothic、見出し Klee One、数値 DM Mono（Google Fonts）`,`- ヘッダーにサロン名「${salon}」とアプリ名「${app}」${logo?`、ロゴ画像「${logo}」（添付）`:''}`,`- クレジット：Produced by Quantify-Beauty`,`- 根本タブ＝薄い青、毛先タブ＝薄いピンクで色分け`,'');
+  L.push(`# 商品マスタ（このサロンの在庫のみ）`,`pH帯：酸性＝pH6.0以下／中性＝6.1〜7.9／アルカリ＝8.0以上。成分は%。`,`| ブランド | 品名 | 区分 | 成分 | 合計還元値 | pH | 帯 |`,`|---|---|---|---|---|---|---|`);
+  sel.forEach(p=>L.push(`| ${BRANDS[p.b]} | ${p.n} | ${p.role} | ${p.note||compStr(p)} | ${fmt(p.t)}% | ${fmt(p.ph)} | ${BAND_JP[band(p.ph)]} |`));
+  L.push(`成分略号：TGA＝チオグリコール酸、CYS＝システイン、CA＝システアミン、CA-HCl＝システアミン塩酸塩、TG-CA＝チオグリコール酸システアミン、TGr＝チオグリセリン。結果画面では成分ごとの混合後濃度も表示する。`,'');
+  L.push(`# 画面の流れ`,`1. 毛質診断（共通）→ 2. 問診0・アイロン（共通）→ 3. 部位別の視診・問診・触診（①根本／②毛先 をタブで切替、各ON/OFF可）→ 4. 毛髪体力の表示 → 5. 部位ごとに「伸び重視／ケア重視」を選択 → 6.「毛髪体力に合わせた薬剤の目安」表示 → 7. 候補レシピの提示 → 8. 塗布量(g)入力で各剤の配合量・総還元値・成分内訳を表示${document.getElementById('share').checked?' → 9. 診断結果を共有テキストとしてコピー（LINE等）':''}`,'');
+  L.push(`# 毛髪診断（HPスコア）`,`UIはボタン選択式（選択時に色が濃くなる角丸ボタン）。癖は波線イラスト付きカード。`,`## 最大HP（共通）＝太さ＋硬さ＋癖`,`- 太さ：太毛 9／普通 8／細毛 7／極細 6`,`- 硬さ：硬め 2／普通 1／柔らかめ 0／極柔 −1`,`- 癖：強 2／中 1／弱 0`);
+  L.push(`## 共通の減点`,`- 問診0 市販ヘアカラー（毛先のみに加算）：明度 5LV黒系→ 1ヶ月毎 −3／2ヶ月毎 −2／3ヶ月以上 −1、7LV〜明るめ→ 1ヶ月毎 −5／2ヶ月毎 −4／3ヶ月以上 −3、使用なし 0`,`- アイロン頻度：ほぼ毎日 −1／週1回程度 −0.5／使用しない 0`,`- アイロン温度：140℃未満 0／140〜160℃ 0／160〜180℃ −0.5／180℃以上 −1`);
+  L.push(`## 部位別の減点（根本・毛先それぞれ）`,`- 視診 ヘアカラー明度：カラー無 0／〜7LV −1／〜10LV −2／〜13LV −3／〜16LV −4／17LV〜 −5`,`- 黒染め・トーンダウン前の最高明度：なし 0／〜7LV −1／〜10LV −2／〜13LV −3／〜16LV −4／17LV〜 −5`,`- 問診1 ヘアカラー頻度：3週間以内 −5／それ以外 0（ヘナ・マニキュア・カラーシャンプー等は「それ以外」）`,`- 根本のみ：問診1が3週間以内のとき使用オキシ 6% 0／4.5% +1／3%以下 +2`,`- 根本：問診2 ブリーチ歴 なし 0／1週間以内 −5／1週間以前 0、問診3 縮毛矯正歴 なし 0／4ヶ月以内 −3／4ヶ月以上 0、問診4 全体染め 1ヶ月以内 −1／それ以外 0`,`- 毛先：問診2 ブリーチ累計 なし 0／〜2回 0／3回〜 −2、問診3 縮毛矯正累計 なし 0／〜2回 0／3回以上 −3、問診4 全体染め累計 なし 0／1〜2回 −1／3回以上 −3`,`- 触診（ウェット時のハリコシ あり／なし）：記録のみ。HP補正の参考として表示`);
+  L.push(`## 毛髪体力`,`部位別HP＝最大HP＋共通減点＋部位別減点（下限0）。数値は手動で補正できる入力欄にも反映する。HPが10以上は赤、7以上はオレンジ、それ未満は緑で表示。`,`HP＝0のときは警告：「クセ戻りがある場合→HP 0.5〜3を手動入力／ない場合→HP 0.1推奨。ウェット触診でハリコシあり→0.5〜3、なし→0.1〜0.5」`,'');
+  L.push(`# 毛髪体力に合わせた薬剤の目安（許容pH帯）`,`| HP | 伸び重視 | ケア重視 |`,`|---|---|---|`,`| 10以上 | アルカリまで可 | アルカリまで可（注意喚起） |`,`| 7〜10未満 | アルカリまで可 | 中性まで |`,`| 4〜7未満 | 中性まで | 酸性のみ |`,`| 4未満 | 酸性のみ | 酸性のみ |`,`HP10以上でケア重視のときは、候補の上に「⚠ ローダメージ毛のためアルカリ領域まで提案しています。軟化テストをしっかり行ってください」と表示する。`,'');
+  L.push(`# 候補レシピの生成（目標値＝HP、T＝塗布量g）`,`在庫にない薬剤は絶対に使わない。条件を満たせないパターンは表示しない。`);
+  if(rbMain){
+    L.push(`## ① ReBALANCEメイン`,`- ベース：伸び重視＝Yellow、ケア重視＝Pale Yellow（在庫にない方は他方で代用）`,has('booster')?`- Booster添加率a（ベース100に対する添加量）：a＝100×(目標−ベース値)÷(29−目標)。Booster量＝T×a÷(100+a)、ベース量＝T−Booster量`:`- Boosterが在庫にないため、目標値がベース値以下の場合のみ作成`,has('riko')?`- 目標値がベース値未満のときはBoosterを使わず、ベース：RIKO Treatmentで希釈（ベース量＝T×目標÷ベース値）`:'',`- 混合pH（Booster添加率→pH、間は直線補間）：Yellow 0%→5.0、5%→6.0、10%→7.0、15%→8.0、20%→9.0、25%→9.6。Pale YellowはYellowの値から−0.5`,`- 上限：Booster添加率25%（全体の20%）まで、かつ混合pHが許容pH帯内であること（例：中性までならYellowは約14.5%添加・約4.4%、Pale Yellowは約17%添加・約4.4%まで）`);
+  }
+  if(others.length){
+    L.push(`## ② 他社メイン（${others.map(b=>BRANDS[b]).join('／')}）`,`- 許容pH帯に入る薬剤のうち、目標値以上で最も近い還元値のものを主剤にする`,`- 同ブランドの希釈剤で目標値まで薄める：主剤量＝T×目標÷主剤の還元値、残りを希釈剤`,`- 希釈剤が在庫にない場合は、同ブランド・許容pH帯内で目標値未満の薬剤との2剤混合で逆算する`,`- 同じ還元値でpHだけ違う薬剤がある場合は、許容帯の中でpHが最も低いものを優先`);
+    others.forEach(br=>{const d=DILUENT[br];L.push(`- ${BRANDS[br]}の希釈剤：${has(d)?byId[d].n:'在庫なし'}`);});
+  }
+  if(mixOK){
+    L.push(`## ③ ミックス（他社チオ系＋ReBALANCE）`,`- 主剤：チオ系100：Booster 20 を混合（主剤の還元値M＝(チオ系の還元値×100＋29×20)÷120）`,`- 希釈側C：伸び重視＝Yellow主体、ケア重視＝Pale Yellow主体。HP4未満はRIKOと1:1。比率は画面で変更可`,`- 主剤量＝T×(目標−C)÷(M−C)、そのうちチオ系＝主剤量×100/120、Booster＝主剤量×20/120、残りを希釈側`,`- チオ系の段階（目標値に届く、いちばん弱い段階を自動選択。上限を超えたら1段階上）：`);
+    TIERS.forEach(t=>{const a=[t.q,t.h].filter(has).map(id=>`${byId[id].n}（${fmt(byId[id].t)}%、上限${fmt(mixUpper(byId[id].t))}%）`);if(a.length)L.push(`  - ${t.tier}：${a.join('／')}`);});
+    L.push(`- このレシピのpH帯表示は主剤（チオ系）の帯を使う。混合後のpHは計算しない`);
+  }
+  L.push('',`# 表示と並び順`,`- ${biasTxt}`,`- 並び順：①許容pH帯に入っている ②伸び/ケアと剤型・主剤の性格が一致（伸び＝クリーム/チオ系、ケア＝ジェル/酸性寄り） ③希釈が少ない（メーカー設計に近い） ④同点ならpHが低い`,`- 各候補カードにパターン名（①②③）、使用薬剤、総還元値、pHバッジ（酸性＝緑／中性＝黄／アルカリ＝赤）を表示`,`- Boosterを含むレシピには「アルカリ寄り」の注記を付ける`,`- 候補を選ぶと、塗布量(g)入力で各剤の配合量（0.1g単位）・総還元値（小数第3位）・成分別濃度を表示`,'');
+  if(document.getElementById('share').checked) L.push(`# 共有テキスト`,`ボタンで「サロン名／施術日／部位ごとの毛髪体力・方針・選んだレシピ・各剤g数・総還元値」をクリップボードにコピー（失敗時はテキスト選択で代替）。`,'');
+  L.push(`# 免責文言（最下部に必ず表示）`,`■ 本ツールについての重要事項`,`・本ツールは、各メーカー様が公表されている薬剤スペックをもとに、混合時の還元剤濃度を計算するための補助ツールです。`,`・本ツールは、各メーカー様による公式な認証・後援を受けたものではありません。本ツールの内容について、各メーカー様は一切の責任を負うものではありません。`,`・本ツール上に表示される濃度・成分情報は推計値を含みます。正確な値については、必ず各メーカー様の製品資料・指示に従ってください。`,`・メーカーをまたぐ薬剤の混合は、施術者の判断と責任のもとで行ってください。`,`・本ツールの利用により生じたいかなる結果についても、運営者（株式会社ImU／Quantify-Beauty）は責任を負いません。ご利用は施術者の責任のもとお願いいたします。`,`・本ツール内で言及される製品名・商品名は、各メーカー様の商標・登録商標です。本ツールはこれらの製品を識別する目的のみで使用しており、商標権者との商業的関係を示すものではありません。`);
+  return L.filter(x=>x!=='' || true).join('\n').replace(/\n{3,}/g,'\n\n');
+}
+
+function refresh(){
+  renderPlot(); renderCoverage();
+  const txt=buildPrompt();
+  document.getElementById('prompt').value=txt;
+  document.getElementById('stat').textContent=`在庫 ${state.inv.size}品目 ・ ${txt.length.toLocaleString()}文字`;
+}
+
+document.addEventListener('change',e=>{
+  const id=e.target.dataset&&e.target.dataset.id;
+  if(id){ e.target.checked?state.inv.add(id):state.inv.delete(id); }
+  refresh();
+});
+document.addEventListener('input',e=>{ if(e.target.matches('input[type=text],input[type=color]')) refresh(); });
+document.addEventListener('click',e=>{
+  const br=e.target.dataset&&e.target.dataset.all; if(!br) return;
+  const ids=P.filter(p=>p.b===br).map(p=>p.id);
+  const all=ids.every(i=>state.inv.has(i));
+  ids.forEach(i=>all?state.inv.delete(i):state.inv.add(i));
+  renderInv(); refresh();
+});
+document.getElementById('copy').addEventListener('click',()=>{
+  const ta=document.getElementById('prompt'), t=document.getElementById('toast');
+  const done=m=>{t.textContent=m;setTimeout(()=>t.textContent='',3000);};
+  try{
+    navigator.clipboard.writeText(ta.value).then(()=>done('コピーしました。Claudeに貼り付けて使えます。'),()=>{ta.focus();ta.select();done('自動コピーできませんでした。選択された文字をコピーしてください。');});
+  }catch(err){ta.focus();ta.select();done('自動コピーできませんでした。選択された文字をコピーしてください。');}
+});
+renderInv(); refresh();
+</script>
+
+</body></html>
